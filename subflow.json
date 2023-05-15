@@ -277,7 +277,7 @@
         {
             "name": "rtsp_encoder",
             "type": "str",
-            "value": "nvv4l2h265enc",
+            "value": "nvv4l2h264enc",
             "ui": {
                 "type": "select",
                 "opts": {
@@ -293,6 +293,42 @@
                                 "en-US": "nvv4l2h264enc"
                             },
                             "v": "nvv4l2h264enc"
+                        },
+                        {
+                            "l": {
+                                "en-US": "nvh264enc"
+                            },
+                            "v": "nvh264enc"
+                        },
+                        {
+                            "l": {
+                                "en-US": "nvh265enc"
+                            },
+                            "v": "nvh265enc"
+                        },
+                        {
+                            "l": {
+                                "en-US": "x264enc"
+                            },
+                            "v": "x264enc"
+                        },
+                        {
+                            "l": {
+                                "en-US": "openh264enc"
+                            },
+                            "v": "openh264enc"
+                        },
+                        {
+                            "l": {
+                                "en-US": "msdkh264enc"
+                            },
+                            "v": "msdkh264enc"
+                        },
+                        {
+                            "l": {
+                                "en-US": "vtenc_h264"
+                            },
+                            "v": "vtenc_h264"
                         }
                     ]
                 }
@@ -391,12 +427,60 @@
                     ]
                 }
             }
+        },
+        {
+            "name": "video_encoder",
+            "type": "str",
+            "value": "nvvidconv",
+            "ui": {
+                "type": "select",
+                "opts": {
+                    "opts": [
+                        {
+                            "l": {
+                                "en-US": "nvvidconv"
+                            },
+                            "v": "nvvidconv"
+                        },
+                        {
+                            "l": {
+                                "en-US": "videoconvert"
+                            },
+                            "v": "videoconvert"
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "name": "jpeg_encoder",
+            "type": "str",
+            "value": "nvjpegenc",
+            "ui": {
+                "type": "select",
+                "opts": {
+                    "opts": [
+                        {
+                            "l": {
+                                "en-US": "nvjpegenc"
+                            },
+                            "v": "nvjpegenc"
+                        },
+                        {
+                            "l": {
+                                "en-US": "jpegenc"
+                            },
+                            "v": "jpegenc"
+                        }
+                    ]
+                }
+            }
         }
     ],
     "meta": {
         "module": "tequ-node-red-gstreamer",
         "type": "tequ-node-red-gstreamer",
-        "version": "0.0.1",
+        "version": "0.0.2",
         "author": "juha.autioniemi@lapinamk.fi",
         "desc": "Launch and control GStreamer pipelines.",
         "license": "MIT"
@@ -452,7 +536,7 @@
             "type": "function",
             "z": "3df2d7962dd9c67c",
             "name": "construct gst pipeline",
-            "func": "let serial = env.get(\"serial\");\nlet model = env.get(\"model\");\nlet pfs_file = env.get(\"pfs_file\");\nlet source = env.get(\"video_source\");\nlet v4l2_device = env.get(\"v4l2_device\");\nlet manufacturer = env.get(\"manufacturer\");\n\nlet enable_rtsp = env.get(\"enable_rtsp\")\nlet rtsp_width = env.get(\"rtsp_width\");\nlet rtsp_height = env.get(\"rtsp_height\");\nlet rtsp_framerate = env.get(\"rtsp_framerate\");\nlet rtsp_encoder = env.get(\"rtsp_encoder\");\nlet rtsp_font_size = env.get(\"rtsp_font_size\");\nlet rtsp_server = env.get(\"rtsp_server\");\n\nlet enable_mjpeg = env.get(\"enable_mjpeg\")\nlet mjpeg_width = env.get(\"mjpeg_width\");\nlet mjpeg_height = env.get(\"mjpeg_height\");\nlet mjpeg_framerate = env.get(\"mjpeg_framerate\");\nlet mjpeg_font_size = env.get(\"mjpeg_font_size\");\n\n\nlet video_width = env.get(\"video_width\");\nlet video_height = env.get(\"video_height\");\nlet video_format = env.get(\"video_format\");\nlet video_type = env.get(\"video_type\");\nlet video_framerate = env.get(\"video_framerate\");\nlet tcp_host = env.get(\"tcp_host\");\nlet tcp_port = env.get(\"tcp_port\");\nlet gst_pipeline;\n\n\n\n\nlet gst_msg = {}\n\nif (source == \"pylonsrc\"){\n    gst_pipeline = \n        source + ' capture-error=skip device-serial-number=\"' + serial + '\" pfs-location=' + pfs_file; \n    \n    gst_pipeline = gst_pipeline + ' ! \"' + video_type + ',width=' + video_width + ',height=' + video_height + ',framerate=' + video_framerate + '/1,format=' + video_format+ '\"'; \n    gst_pipeline = gst_pipeline + ' ! tee name = video_out';\n\n\n    if (enable_mjpeg){\n        gst_pipeline = gst_pipeline + ' video_out. ! clockoverlay time-format=\"%d-%m-%Y %H:%M:%S - ' + serial + '\" font-desc=\"Sans, ' + mjpeg_font_size + '\" ! videoscale ! videorate ! \"' + video_type + ',width=' + mjpeg_width + ',height=' + mjpeg_height + ',framerate=' + mjpeg_framerate + '/1,format=' + video_format + '\" ! nvvidconv ! nvjpegenc ! taginject tags = \"application-name=tequ-gst-1.0,copyright=Lapland_UAS,description=serialnumber_' + serial + ',artist=Tequ,device-manufacturer=' + manufacturer +',device-model='+model+'\" ! jifmux ! queue ! tcpclientsink host='+tcp_host+' port='+tcp_port;\n    }\n    if (enable_rtsp){\n        gst_pipeline = gst_pipeline + ' video_out. ! clockoverlay time-format=\"%d-%m-%Y %H:%M:%S - ' + serial + '\" font-desc=\"Sans, ' + rtsp_font_size +'\" ! videoscale ! videorate ! \"' + video_type + ',width=' + rtsp_width + ',height=' + rtsp_height + ',framerate=' + rtsp_framerate + '/1,format=' + video_format + '\" ! nvvidconv ! ' +rtsp_encoder+' ! queue ! rtspclientsink location = '+rtsp_server+serial+'';\n    }\n}\nelse if (source == \"v4l2src\"){\n    gst_pipeline =\n        source + ' device=\"' + v4l2_device+'\"'; \n    gst_pipeline = gst_pipeline + ' ! videoscale ! \"' + video_type + ',width=' + video_width + ',height=' + video_height + ',framerate=' + video_framerate + '/1,format=' + video_format + '\"';\n    gst_pipeline = gst_pipeline + ' ! tee name = video_out';\n\n    if (enable_mjpeg) {\n        gst_pipeline = gst_pipeline + ' video_out. ! clockoverlay time-format=\"%d-%m-%Y %H:%M:%S - ' + serial + '\" font-desc=\"Sans, ' + mjpeg_font_size + '\" ! videoscale ! videorate ! \"' + video_type + ',width=' + mjpeg_width + ',height=' + mjpeg_height + ',framerate=' + mjpeg_framerate + '/1,format=' + video_format + '\" ! nvvidconv ! nvjpegenc ! taginject tags = \"application-name=tequ-gst-1.0,copyright=Lapland_UAS,description=serialnumber_' + serial + ',artist=Tequ,device-manufacturer=' + manufacturer + ',device-model=' + model + '\" ! jifmux ! queue ! tcpclientsink host=' + tcp_host + ' port=' + tcp_port;\n    }\n    if (enable_rtsp) {\n        gst_pipeline = gst_pipeline + ' video_out. ! clockoverlay time-format=\"%d-%m-%Y %H:%M:%S - ' + serial + '\" font-desc=\"Sans, ' + rtsp_font_size + '\" ! videoscale ! videorate ! \"' + video_type + ',width=' + rtsp_width + ',height=' + rtsp_height + ',framerate=' + rtsp_framerate + '/1,format=' + video_format + '\" ! nvvidconv ! ' + rtsp_encoder + ' ! queue ! rtspclientsink location = ' + rtsp_server + serial + '';\n    }\n}\nelse {\n    node.status({ fill: \"red\", shape: \"ring\", text: \"src: \" + source +\" is not supported\" });\n    return null;\n}\n\ngst_msg.payload = gst_pipeline;\nnode.status({fill:\"blue\",shape:\"ring\",text:\"Launching...\"});\nreturn gst_msg;",
+            "func": "let serial = env.get(\"serial\");\nlet model = env.get(\"model\");\nlet pfs_file = env.get(\"pfs_file\");\nlet source = env.get(\"video_source\");\nlet v4l2_device = env.get(\"v4l2_device\");\nlet manufacturer = env.get(\"manufacturer\");\n\nlet enable_rtsp = env.get(\"enable_rtsp\")\nlet rtsp_width = env.get(\"rtsp_width\");\nlet rtsp_height = env.get(\"rtsp_height\");\nlet rtsp_framerate = env.get(\"rtsp_framerate\");\nlet rtsp_encoder = env.get(\"rtsp_encoder\");\nlet rtsp_font_size = env.get(\"rtsp_font_size\");\nlet rtsp_server = env.get(\"rtsp_server\");\n\nlet enable_mjpeg = env.get(\"enable_mjpeg\")\nlet mjpeg_width = env.get(\"mjpeg_width\");\nlet mjpeg_height = env.get(\"mjpeg_height\");\nlet mjpeg_framerate = env.get(\"mjpeg_framerate\");\nlet mjpeg_font_size = env.get(\"mjpeg_font_size\");\nlet jpeg_encoder = env.get(\"jpeg_encoder\");\nlet video_encoder = env.get(\"video_encoder\");\n\nlet video_width = env.get(\"video_width\");\nlet video_height = env.get(\"video_height\");\nlet video_format = env.get(\"video_format\");\nlet video_type = env.get(\"video_type\");\nlet video_framerate = env.get(\"video_framerate\");\nlet tcp_host = env.get(\"tcp_host\");\nlet tcp_port = env.get(\"tcp_port\");\nlet gst_pipeline;\n\n\n\n\nlet gst_msg = {}\n\nif (source == \"pylonsrc\"){\n    gst_pipeline = \n        source + ' capture-error=skip device-serial-number=\"' + serial + '\" pfs-location=' + pfs_file; \n    \n    gst_pipeline = gst_pipeline + ' ! \"' + video_type + ',width=' + video_width + ',height=' + video_height + ',framerate=' + video_framerate + '/1,format=' + video_format+ '\"'; \n    gst_pipeline = gst_pipeline + ' ! tee name = video_out';\n\n\n    if (enable_mjpeg){\n        gst_pipeline = gst_pipeline + ' video_out. ! clockoverlay time-format=\"%d-%m-%Y %H:%M:%S - ' + serial + '\" font-desc=\"Sans, ' + mjpeg_font_size + '\" ! videoscale ! videorate ! \"' + video_type + ',width=' + mjpeg_width + ',height=' + mjpeg_height + ',framerate=' + mjpeg_framerate + '/1,format=' + video_format + '\" ! ' + video_encoder +' ! ' + jpeg_encoder+' ! taginject tags = \"application-name=tequ-gst-1.0,copyright=Lapland_UAS,description=serialnumber_' + serial + ',artist=Tequ,device-manufacturer=' + manufacturer +',device-model='+model+'\" ! jifmux ! queue ! tcpclientsink host='+tcp_host+' port='+tcp_port;\n    }\n    if (enable_rtsp){\n        gst_pipeline = gst_pipeline + ' video_out. ! clockoverlay time-format=\"%d-%m-%Y %H:%M:%S - ' + serial + '\" font-desc=\"Sans, ' + rtsp_font_size + '\" ! videoscale ! videorate ! \"' + video_type + ',width=' + rtsp_width + ',height=' + rtsp_height + ',framerate=' + rtsp_framerate + '/1,format=' + video_format + '\" ! ' + video_encoder +' ! ' +rtsp_encoder+' ! queue ! rtspclientsink location = '+rtsp_server+serial+'';\n    }\n}\nelse if (source == \"v4l2src\"){\n    gst_pipeline =\n        source + ' device=\"' + v4l2_device+'\"'; \n    gst_pipeline = gst_pipeline + ' ! videoscale ! \"' + video_type + ',width=' + video_width + ',height=' + video_height + ',framerate=' + video_framerate + '/1,format=' + video_format + '\"';\n    gst_pipeline = gst_pipeline + ' ! tee name = video_out';\n\n    if (enable_mjpeg) {\n        gst_pipeline = gst_pipeline + ' video_out. ! clockoverlay time-format=\"%d-%m-%Y %H:%M:%S - ' + serial + '\" font-desc=\"Sans, ' + mjpeg_font_size + '\" ! videoscale ! videorate ! \"' + video_type + ',width=' + mjpeg_width + ',height=' + mjpeg_height + ',framerate=' + mjpeg_framerate + '/1,format=' + video_format + '\" ! ' + video_encoder +' ! ' + jpeg_encoder +' ! taginject tags = \"application-name=tequ-gst-1.0,copyright=Lapland_UAS,description=serialnumber_' + serial + ',artist=Tequ,device-manufacturer=' + manufacturer + ',device-model=' + model + '\" ! jifmux ! queue ! tcpclientsink host=' + tcp_host + ' port=' + tcp_port;\n    }\n    if (enable_rtsp) {\n        gst_pipeline = gst_pipeline + ' video_out. ! clockoverlay time-format=\"%d-%m-%Y %H:%M:%S - ' + serial + '\" font-desc=\"Sans, ' + rtsp_font_size + '\" ! videoscale ! videorate ! \"' + video_type + ',width=' + rtsp_width + ',height=' + rtsp_height + ',framerate=' + rtsp_framerate + '/1,format=' + video_format + '\" ! ' + video_encoder +' ! ' + rtsp_encoder + ' ! queue ! rtspclientsink location = ' + rtsp_server + serial + '';\n    }\n}\nelse {\n    node.status({ fill: \"red\", shape: \"ring\", text: \"src: \" + source +\" is not supported\" });\n    return null;\n}\n\ngst_msg.payload = gst_pipeline;\nnode.status({fill:\"blue\",shape:\"ring\",text:\"Launching...\"});\nreturn gst_msg;",
             "outputs": 1,
             "noerr": 0,
             "initialize": "",
@@ -690,10 +774,10 @@
         {
             "id": "f32367b0f3cad57a",
             "type": "subflow:3df2d7962dd9c67c",
-            "z": "7b248573a2bd55b0",
+            "z": "d93ef8d5.38b928",
             "name": "",
-            "x": 490,
-            "y": 420,
+            "x": 1070,
+            "y": 500,
             "wires": [
                 []
             ]

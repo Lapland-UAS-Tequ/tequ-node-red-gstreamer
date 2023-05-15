@@ -1,6 +1,6 @@
 {
   "name": "tequ-node-red-gstreamer",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Node-RED node for tequ-node-red-gstreamer",
   "keywords": [
     "node-red-nodegen"
