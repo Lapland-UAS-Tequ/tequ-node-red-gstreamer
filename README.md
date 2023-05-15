@@ -7,7 +7,7 @@ Launch and control GStreamer pipelines.
 
 Run the following command in your Node-RED user directory - typically `~/.node-red`
 
-        npm install tequ-node-red-gstreamer
+        npm install Lapland-UAS-Tequ/tequ-node-red-gstreamer
 
 ## Information
 
